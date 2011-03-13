@@ -15,43 +15,37 @@ public class TestApplication extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    Canvas cPolygons = new Canvas();
-
     public TestApplication() {
         super("Shapes demo");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         getContentPane().setLayout(new GridBagLayout());
 
+        Shape[] shapes = new Shape[1];
+        shapes[0] = new RegularPolygon(350, 100, 50, 6, 0);
+
         getContentPane().add(
-                cPolygons,
+                new Canvas(shapes, Color.blue),
                 new GridBagConstraints(0, 1, 1, 1, 1, 1,
                         GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH,
                         new Insets(5, 5, 0, 5), 0, 0));
-
-        initRegular();
 
         setSize(800, 600);
         setLocationRelativeTo(null);
     }
 
     public static void main(final String[] args) {
-        TestApplication fr = new TestApplication();
-        fr.setVisible(true);
-    }
-
-    protected void initRegular() {
-        Shape[] shapes = new Shape[1];
-        shapes[0] = new RegularPolygon(350, 100, 50, 6, 0);
-        cPolygons.setShapes(shapes, Color.blue);
+        new TestApplication().setVisible(true);
     }
 
     protected static class Canvas extends JPanel {
+
         private static final long serialVersionUID = 1L;
 
         Shape[] shapes;
         Color color;
 
-        public void setShapes(final Shape[] shapes, final Color color) {
+        public Canvas(final Shape[] shapes, final Color color) {
+            super();
             this.shapes = shapes;
             this.color = color;
         }
