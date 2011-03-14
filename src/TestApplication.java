@@ -6,25 +6,26 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import sl.shapes.RegularPolygon;
-
 public class TestApplication extends JFrame {
 
+    private static final Color DEFAULT_COLOR = Color.YELLOW;
     private static final int CENTER_Y = 300;
     private static final int CENTER_X = 350;
 
-    private static final int X_DELTA = 80;
-    private static final int Y_DELTA = 46;
+    public static final int CIRCLE_RADIUS = 35;
 
-    private static final int CIRCLE_RADIUS = 50;
-    private static final int STARTING_ANGLE = 0;
-    private static final int NUMBER_OF_SIDES = 6;
+    private static final int X_DELTA = (int) (1.7 * CIRCLE_RADIUS);
+    private static final int Y_DELTA = (int) (0.95 * CIRCLE_RADIUS);
+
+
     private static final long serialVersionUID = 1L;
 
     public TestApplication() {
@@ -32,15 +33,14 @@ public class TestApplication extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         getContentPane().setLayout(new GridBagLayout());
 
-        List<GUIHexagon> shapes = new LinkedList<GUIHexagon>();
-        shapes.add(createHexagon(CENTER_X, CENTER_Y, Color.DARK_GRAY));
-        shapes.add(createHexagon(CENTER_X + 1 * X_DELTA, CENTER_Y -1 * Y_DELTA, Color.BLUE));
-        shapes.add(createHexagon(CENTER_X -1 * X_DELTA, CENTER_Y -1 * Y_DELTA, Color.RED));
-        shapes.add(createHexagon(CENTER_X -1 * X_DELTA, CENTER_Y +1 * Y_DELTA, Color.GRAY));
-        shapes.add(createHexagon(CENTER_X + 1 * X_DELTA, CENTER_Y +1 * Y_DELTA, Color.GREEN));
-        shapes.add(createHexagon(CENTER_X + 2 * X_DELTA, CENTER_Y, Color.ORANGE));
-        shapes.add(createHexagon(CENTER_X, CENTER_Y +2 * Y_DELTA, Color.CYAN));
-        shapes.add(createHexagon(CENTER_X, CENTER_Y -2 * Y_DELTA, Color.MAGENTA));
+        Set<GUIHexagon> shapes = new HashSet<GUIHexagon>();
+        shapes.add(createHexagon(CENTER_X, CENTER_Y, Color.GREEN));
+        Map<Integer, Color> ringColors = new HashMap<Integer, Color>();
+        ringColors.put(2, Color.BLUE);
+        ringColors.put(1, Color.ORANGE);
+        ringColors.put(0, DEFAULT_COLOR);
+        addAllNeighbors(shapes, CENTER_X, CENTER_Y, 2, ringColors);
+        System.out.println(shapes.size());
 
         getContentPane().add(
                 new Canvas(shapes, Color.blue),
@@ -52,9 +52,50 @@ public class TestApplication extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    private GUIHexagon createHexagon(final int xCenter, final int yCenter, final Color color) {
-        return new GUIHexagon(color, new RegularPolygon(xCenter, yCenter,
-                CIRCLE_RADIUS, NUMBER_OF_SIDES, STARTING_ANGLE));
+    private void addAllNeighbors(final Set<GUIHexagon> shapes,
+            final int centerX, final int centerY, final int ringCounter, final Map<Integer, Color> ringColors) {
+
+        // TOP
+        shapes.add(createHexagon(centerX, centerY - 2 * Y_DELTA, ringColors.get(ringCounter)));
+        if (ringCounter > 0) {
+            addAllNeighbors(shapes, centerX, centerY - 2 * Y_DELTA, ringCounter - 1, ringColors);
+        }
+
+        // TOP-RIGHT
+        shapes.add(createHexagon(centerX + 1 * X_DELTA, centerY - 1 * Y_DELTA, ringColors.get(ringCounter)));
+        if (ringCounter > 0) {
+            addAllNeighbors(shapes, centerX + 1 * X_DELTA, centerY - 1 * Y_DELTA, ringCounter - 1, ringColors);
+        }
+
+        // BOTTOM-RIGHT
+        shapes.add(createHexagon(centerX + 1 * X_DELTA, centerY + 1 * Y_DELTA, ringColors.get(ringCounter)));
+        if (ringCounter > 0) {
+            addAllNeighbors(shapes, centerX + 1 * X_DELTA, centerY + 1 * Y_DELTA, ringCounter - 1, ringColors);
+        }
+
+        // BOTTOM
+        shapes.add(createHexagon(centerX, centerY + 2 * Y_DELTA, ringColors.get(ringCounter)));
+        if (ringCounter > 0) {
+            addAllNeighbors(shapes, centerX, centerY + 2 * Y_DELTA, ringCounter - 1, ringColors);
+        }
+
+        // BOTTOM-LEFT
+        shapes.add(createHexagon(centerX - 1 * X_DELTA, centerY + 1 * Y_DELTA, ringColors.get(ringCounter)));
+        if (ringCounter > 0) {
+            addAllNeighbors(shapes, centerX - 1 * X_DELTA, centerY + 1 * Y_DELTA, ringCounter - 1, ringColors);
+        }
+
+        // TOP-LEFT
+        shapes.add(createHexagon(centerX - 1 * X_DELTA, centerY - 1 * Y_DELTA, ringColors.get(ringCounter)));
+        if (ringCounter > 0) {
+            addAllNeighbors(shapes, centerX - 1 * X_DELTA, centerY - 1 * Y_DELTA, ringCounter - 1, ringColors);
+        }
+
+    }
+
+    private GUIHexagon createHexagon(final int xCenter, final int yCenter,
+            final Color color) {
+        return new GUIHexagon(color, xCenter, yCenter);
     }
 
     public static void main(final String[] args) {
@@ -67,10 +108,10 @@ public class TestApplication extends JFrame {
 
         private static final long serialVersionUID = 1L;
 
-        List<GUIHexagon> shapes;
+        Set<GUIHexagon> shapes;
         Color color;
 
-        public Canvas(final List<GUIHexagon> shapes, final Color color) {
+        public Canvas(final Set<GUIHexagon> shapes, final Color color) {
             super();
             this.shapes = shapes;
             this.color = color;
@@ -85,12 +126,11 @@ public class TestApplication extends JFrame {
             g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
             g.setColor(color);
             Graphics2D graphics2d = (Graphics2D) g;
+            graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
             for (GUIHexagon hexagon : shapes) {
-                graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON);
                 graphics2d.setColor(hexagon.getHexagonColor());
                 graphics2d.fill(hexagon.getPolygon());
-                graphics2d.draw(hexagon.getPolygon());
             }
             for (GUIHexagon hexagon : shapes) {
                 graphics2d.setColor(Color.BLACK);
